@@ -644,6 +644,10 @@ class write_transaction final : public transaction
 {
 public:
 	explicit write_transaction (std::unique_ptr<nano::write_transaction_impl> write_transaction_impl);
+	~write_transaction () {
+		destructed = true;
+	};
+	bool destructed { false };
 	void * get_handle () const override;
 	void commit () const;
 	void renew ();
