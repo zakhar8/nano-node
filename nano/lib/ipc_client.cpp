@@ -123,7 +123,7 @@ public:
 			}
 
 			this_l->send_queue.pop_front ();
-			if (!ec && !this_l->send_queue.empty ())
+			if (!this_l->send_queue.empty ())
 			{
 				this_l->write_queued_messages ();
 			}
