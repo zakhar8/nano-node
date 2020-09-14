@@ -97,7 +97,6 @@ protected:
 	/** Set by close() - completion handlers must check this. This is more reliable than checking
 	 error codes as the OS may have already completed the async operation. */
 	std::atomic<bool> closed{ false };
-	void close_internal ();
 	void write_queued_messages ();
 	void start_timer ();
 	void stop_timer ();
