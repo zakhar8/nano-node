@@ -4,7 +4,8 @@
 #include <boost/format.hpp>
 
 nano::rep_crawler::rep_crawler (nano::node & node_a) :
-node (node_a)
+node{ node_a },
+timer{ node.io_ctx }
 {
 	if (!node.flags.disable_rep_crawler)
 	{
@@ -85,26 +86,28 @@ void nano::rep_crawler::validate ()
 
 void nano::rep_crawler::ongoing_crawl ()
 {
-	auto now (std::chrono::steady_clock::now ());
-	auto total_weight_l (total_weight ());
-	cleanup_reps ();
-	update_weights ();
-	validate ();
-	query (get_crawl_targets (total_weight_l));
-	auto sufficient_weight (total_weight_l > node.config.online_weight_minimum.number ());
-	// If online weight drops below minimum, reach out to preconfigured peers
-	if (!sufficient_weight)
-	{
-		node.keepalive_preconfigured (node.config.preconfigured_peers);
-	}
-	// Reduce crawl frequency when there's enough total peer weight
-	unsigned next_run_ms = node.network_params.network.is_dev_network () ? 100 : sufficient_weight ? 7000 : 3000;
-	std::weak_ptr<nano::node> node_w (node.shared ());
-	node.alarm.add (now + std::chrono::milliseconds (next_run_ms), [node_w, this]() {
-		if (auto node_l = node_w.lock ())
+	node.spawn (
+	[this](boost::asio::yield_context yield) {
+		boost::system::error_code ec;
+		while (!node.stopped && !ec)
 		{
-			this->ongoing_crawl ();
+			auto total_weight_l = total_weight ();
+			cleanup_reps ();
+			update_weights ();
+			validate ();
+			query (get_crawl_targets (total_weight_l));
+			auto sufficient_weight = total_weight_l > node.config.online_weight_minimum.number ();
+			// If online weight drops below minimum, reach out to preconfigured peers
+			if (!sufficient_weight)
+			{
+				node.keepalive_preconfigured (node.config.preconfigured_peers);
+			}
+			// Reduce crawl frequency when there's enough total peer weight
+			unsigned next_run_ms = node.network_params.network.is_dev_network () ? 100 : sufficient_weight ? 7000 : 3000;
+			timer.expires_from_now (std::chrono::milliseconds (next_run_ms));
+			timer.async_wait (yield[ec]);
 		}
+		debug_assert (node.stopped || ec == boost::asio::error::operation_aborted);
 	});
 }
 

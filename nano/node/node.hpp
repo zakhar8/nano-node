@@ -219,6 +219,8 @@ private:
 	void long_inactivity_cleanup ();
 	void epoch_upgrader_impl (nano::private_key const &, nano::epoch, uint64_t, uint64_t);
 	nano::locked<std::future<void>> epoch_upgrading;
+	boost::asio::steady_timer rep_calculation_timer;
+	boost::asio::steady_timer bootstrap_timer;
 };
 
 std::unique_ptr<container_info_component> collect_container_info (node & node, const std::string & name);

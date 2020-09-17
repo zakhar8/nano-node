@@ -129,7 +129,9 @@ aggregator (network_params.network, config, stats, active.generator, history, le
 payment_observer_processor (observers.blocks),
 wallets (wallets_store.init_error (), *this),
 startup_time (std::chrono::steady_clock::now ()),
-node_seq (seq)
+node_seq (seq),
+rep_calculation_timer{ io_ctx },
+bootstrap_timer{ io_ctx }
 {
 	if (!init_error ())
 	{
@@ -673,6 +675,8 @@ void nano::node::stop ()
 	if (!stopped.exchange (true))
 	{
 		logger.always_log ("Node stopping");
+		rep_calculation_timer.cancel ();
+		bootstrap_timer.cancel ();
 		// Cancels ongoing work generation tasks, which may be blocking other threads
 		// No tasks may wait for work generation in I/O threads, or termination signal capturing will be unable to call node::stop()
 		distributed_work.stop ();
@@ -800,36 +804,35 @@ void nano::node::long_inactivity_cleanup ()
 
 void nano::node::ongoing_rep_calculation ()
 {
-	auto now (std::chrono::steady_clock::now ());
-	vote_processor.calculate_weights ();
-	std::weak_ptr<nano::node> node_w (shared_from_this ());
-	alarm.add (now + std::chrono::minutes (10), [node_w]() {
-		if (auto node_l = node_w.lock ())
+	spawn (
+	[this](boost::asio::yield_context yield) {
+		boost::system::error_code ec;
+		while (!stopped && !ec)
 		{
-			node_l->ongoing_rep_calculation ();
+			this->vote_processor.calculate_weights ();
+			rep_calculation_timer.expires_from_now (std::chrono::minutes (10));
+			rep_calculation_timer.async_wait (yield[ec]);
 		}
+		debug_assert (stopped || ec == boost::asio::error::operation_aborted);
 	});
 }
 
 void nano::node::ongoing_bootstrap ()
 {
-	auto next_wakeup (network_params.node.bootstrap_interval);
-	if (warmed_up < 3)
-	{
-		// Re-attempt bootstrapping more aggressively on startup
-		next_wakeup = std::chrono::seconds (5);
-		if (!bootstrap_initiator.in_progress () && !network.empty ())
+	spawn (
+	[this](boost::asio::yield_context yield) {
+		boost::system::error_code ec;
+		while (!stopped && !ec)
 		{
-			++warmed_up;
+			this->bootstrap_initiator.bootstrap ();
+			bootstrap_timer.expires_from_now (warmed_up < 3 ? std::chrono::seconds (5) : network_params.node.bootstrap_interval);
+			if (warmed_up < 3 && !bootstrap_initiator.in_progress () && !network.empty ())
+			{
+				++warmed_up;
+			}
+			bootstrap_timer.async_wait (yield[ec]);
 		}
-	}
-	bootstrap_initiator.bootstrap ();
-	std::weak_ptr<nano::node> node_w (shared_from_this ());
-	alarm.add (std::chrono::steady_clock::now () + next_wakeup, [node_w]() {
-		if (auto node_l = node_w.lock ())
-		{
-			node_l->ongoing_bootstrap ();
-		}
+		debug_assert (stopped || ec == boost::asio::error::operation_aborted);
 	});
 }
 

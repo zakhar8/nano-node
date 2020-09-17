@@ -3,6 +3,7 @@
 #include <nano/node/common.hpp>
 #include <nano/node/transport/transport.hpp>
 
+#include <boost/asio/steady_timer.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/mem_fun.hpp>
 #include <boost/multi_index/member.hpp>
@@ -151,5 +152,6 @@ private:
 	friend class active_transactions_confirm_frontier_Test;
 
 	std::deque<std::pair<std::shared_ptr<nano::transport::channel>, std::shared_ptr<nano::vote>>> responses;
+	boost::asio::steady_timer timer;
 };
 }
