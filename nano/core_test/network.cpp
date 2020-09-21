@@ -35,6 +35,9 @@ TEST (network, replace_port)
 	// On handshake, the channel is replaced
 	ASSERT_NO_ERROR (system.poll_until_true (5s, [&]() {
 		node0->network.send_keepalive (channel1);
-		return !node0->network.udp_channels.channel (wrong_endpoint) && node0->network.udp_channels.channel (node1->network.endpoint ());
+		bool has_wrong = node0->network.udp_channels.channel (wrong_endpoint) != nullptr;
+		bool has_correct = node0->network.udp_channels.channel (node1->network.endpoint ()) != nullptr;
+		std::cerr << "w " << has_wrong << " :c " << has_correct << '\n';
+		return !has_wrong && has_correct;
 	}));
 }

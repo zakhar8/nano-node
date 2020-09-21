@@ -654,6 +654,7 @@ void nano::network::random_fill (std::array<nano::endpoint, 8> & target_a) const
 		debug_assert (j < target_a.end ());
 		*j = (*i)->get_endpoint ();
 	}
+	std::cerr << "Peers: " << std::to_string (peers.size ()) << '\n';
 }
 
 void nano::network::fill_keepalive_self (std::array<nano::endpoint, 8> & target_a) const
