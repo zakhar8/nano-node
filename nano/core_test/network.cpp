@@ -829,28 +829,21 @@ TEST (network, replace_port)
 	auto node1 (std::make_shared<nano::node> (system.io_ctx, nano::get_available_port (), nano::unique_path (), system.alarm, system.logging, system.work, node_flags));
 	node1->start ();
 	system.nodes.push_back (node1);
-	{
-		auto channel (node0->network.udp_channels.insert (nano::endpoint (node1->network.endpoint ().address (), 23000), node1->network_params.protocol.protocol_version));
-		if (channel)
-		{
-			channel->set_node_id (node1->node_id.pub);
-		}
-	}
+	auto wrong_endpoint = nano::endpoint (node1->network.endpoint ().address (), 23000);
+	auto channel0 (node0->network.udp_channels.insert (wrong_endpoint, node1->network_params.protocol.protocol_version));
+	ASSERT_NE (nullptr, channel0);
+	node0->network.udp_channels.modify (channel0, [&node1](std::shared_ptr<nano::transport::channel> channel_a) {
+		channel_a->set_node_id (node1->node_id.pub);
+	});
 	auto peers_list (node0->network.list (std::numeric_limits<size_t>::max ()));
 	ASSERT_EQ (peers_list[0]->get_node_id (), node1->node_id.pub);
-	auto channel (std::make_shared<nano::transport::channel_udp> (node0->network.udp_channels, node1->network.endpoint (), node1->network_params.protocol.protocol_version));
-	node0->network.send_keepalive (channel);
-	ASSERT_TIMELY (5s, node0->network.udp_channels.channel (node1->network.endpoint ()));
-	ASSERT_TIMELY (5s, node0->network.udp_channels.size () <= 1);
+	auto channel1 (std::make_shared<nano::transport::channel_udp> (node0->network.udp_channels, node1->network.endpoint (), node1->network_params.protocol.protocol_version));
 	ASSERT_EQ (node0->network.udp_channels.size (), 1);
-	auto list1 (node0->network.list (1));
-	ASSERT_EQ (node1->network.endpoint (), list1[0]->get_endpoint ());
-	auto list2 (node1->network.list (1));
-	ASSERT_EQ (node0->network.endpoint (), list2[0]->get_endpoint ());
-	// Remove correct peer (same node ID)
-	node0->network.udp_channels.clean_node_id (nano::endpoint (node1->network.endpoint ().address (), 23000), node1->node_id.pub);
-	ASSERT_TIMELY (5s, node0->network.udp_channels.size () <= 1);
-	node1->stop ();
+	// On handshake, the channel is replaced
+	ASSERT_NO_ERROR (system.poll_until_true (5s, [&]() {
+		node0->network.send_keepalive (channel1);
+		return !node0->network.udp_channels.channel (wrong_endpoint) && node0->network.udp_channels.channel (node1->network.endpoint ());
+	}));
 }
 
 TEST (network, peer_max_tcp_attempts)
