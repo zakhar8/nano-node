@@ -37,7 +37,6 @@ TEST (network, replace_port)
 		node0->network.send_keepalive (channel1);
 		bool has_wrong = node0->network.udp_channels.channel (wrong_endpoint) != nullptr;
 		bool has_correct = node0->network.udp_channels.channel (node1->network.endpoint ()) != nullptr;
-		std::cerr << "w " << has_wrong << " :c " << has_correct << '\n';
 		return !has_wrong && has_correct;
 	}));
 }

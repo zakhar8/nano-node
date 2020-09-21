@@ -79,7 +79,7 @@ public:
 	bool network_message_logging_value{ false };
 	bool network_publish_logging_value{ false };
 	bool network_packet_logging_value{ false };
-	bool network_keepalive_logging_value{ false };
+	bool network_keepalive_logging_value{ true };
 	bool network_node_id_handshake_logging_value{ false };
 	bool network_telemetry_logging_value{ false };
 	bool network_rejected_logging_value{ false };
