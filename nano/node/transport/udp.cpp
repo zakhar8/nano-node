@@ -116,6 +116,10 @@ std::shared_ptr<nano::transport::channel_udp> nano::transport::udp_channels::ins
 			node.network.channel_observer (result);
 		}
 	}
+	else
+	{
+		std::cout << "Did not insert UDP channel, not a peer " << node.network.not_a_peer (endpoint_a, node.config.allow_local_peers) << std::endl;
+	}
 	return result;
 }
 
@@ -242,6 +246,8 @@ void nano::transport::udp_channels::clean_node_id (nano::endpoint const & endpoi
 		if (record.endpoint ().address () == endpoint_a.address () && record.endpoint ().port () != endpoint_a.port ())
 		{
 			channels.get<endpoint_tag> ().erase (record.endpoint ());
+			std::cout << "clean_node_id(endpoint) erased a channel\n"
+			          << nano::generate_stacktrace () << std::endl;
 			break;
 		}
 	}
@@ -483,11 +489,26 @@ public:
 						});
 					}
 				}
+				else
+				{
+					if (message_a.response->first == node.node_id.pub)
+					{
+						std::cout << "Did not complete handshake with self" << std::endl;
+					}
+					else
+					{
+						std::cout << "Did not complete handshake since it existed in TCP" << std::endl;
+					}
+				}
 			}
-			else if (node.config.logging.network_node_id_handshake_logging ())
+			else
 			{
-				node.logger.try_log (boost::str (boost::format ("Failed to validate syn cookie signature %1% by %2%") % message_a.response->second.to_string () % message_a.response->first.to_account ()));
+				std::cout << (boost::str (boost::format ("Failed to validate syn cookie signature %1% by %2%") % message_a.response->second.to_string () % message_a.response->first.to_account ())) << std::endl;
 			}
+		}
+		else
+		{
+			std::cout << "No response in handshake" << std::endl;
 		}
 		if (!validated_response && node.network.udp_channels.channel (endpoint) == nullptr)
 		{
