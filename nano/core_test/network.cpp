@@ -33,8 +33,8 @@ TEST (network, replace_port)
 	auto channel1 (std::make_shared<nano::transport::channel_udp> (node0->network.udp_channels, node1->network.endpoint (), node1->network_params.protocol.protocol_version));
 	ASSERT_EQ (node0->network.udp_channels.size (), 1);
 	// On handshake, the channel is replaced
+	node0->network.send_keepalive (channel1);
 	ASSERT_NO_ERROR (system.poll_until_true (5s, [&]() {
-		node0->network.send_keepalive (channel1);
 		bool has_wrong = node0->network.udp_channels.channel (wrong_endpoint) != nullptr;
 		bool has_correct = node0->network.udp_channels.channel (node1->network.endpoint ()) != nullptr;
 		return !has_wrong && has_correct;
