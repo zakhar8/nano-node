@@ -156,8 +156,7 @@ nano::node_constants::node_constants (nano::network_constants & network_constant
 }
 
 nano::voting_constants::voting_constants (nano::network_constants & network_constants) :
-max_cache{ network_constants.is_dev_network () ? 256U : 128U * 1024 },
-delay{ network_constants.is_dev_network () ? 1 : 15 }
+max_cache{ network_constants.is_dev_network () ? 256U : 128U * 1024 }
 {
 }
 
