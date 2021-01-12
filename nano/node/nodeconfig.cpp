@@ -395,7 +395,7 @@ nano::error nano::node_config::deserialize_toml (nano::tomlconfig & toml)
 			experimental_config_l.get<uint64_t> ("max_pruning_depth", max_pruning_depth);
 			auto voting_delay_l (voting_delay.count ());
 			experimental_config_l.get ("voting_delay", voting_delay_l);
-			voting_delay = std::chrono::seconds (voting_delay_l);
+			voting_delay = std::chrono::milliseconds (voting_delay_l);
 		}
 
 		// Validate ranges

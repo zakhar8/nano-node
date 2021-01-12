@@ -100,7 +100,7 @@ public:
 	double max_work_generate_multiplier{ 64. };
 	uint32_t max_queued_requests{ 512 };
 	std::chrono::seconds max_pruning_age{ !network_params.network.is_beta_network () ? std::chrono::seconds (24 * 60 * 60) : std::chrono::seconds (5 * 60) }; // 1 day; 5 minutes for beta network
-	std::chrono::seconds voting_delay{ network_params.network.is_dev_network () ? std::chrono::seconds (1) : std::chrono::seconds (15) }; // 1 second for dev network; 15 seconds for others
+	std::chrono::milliseconds voting_delay{ network_params.network.is_dev_network () ? std::chrono::milliseconds (1000) : std::chrono::milliseconds (15 * 1000) }; // 1 second for dev network; 15 seconds for others
 	uint64_t max_pruning_depth{ 0 };
 	nano::rocksdb_config rocksdb_config;
 	nano::lmdb_config lmdb_config;
