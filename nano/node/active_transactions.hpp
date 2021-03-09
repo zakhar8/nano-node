@@ -67,19 +67,22 @@ class inactive_cache_information final
 {
 public:
 	inactive_cache_information () = default;
-	inactive_cache_information (std::chrono::steady_clock::time_point arrival, nano::block_hash hash, nano::account initial_rep_a, nano::inactive_cache_status status) :
+	inactive_cache_information (std::chrono::steady_clock::time_point arrival, nano::block_hash hash, nano::account initial_rep_a, uint64_t initial_timestamp_a, nano::inactive_cache_status status) :
 	arrival (arrival),
 	hash (hash),
 	status (status)
 	{
 		voters.reserve (8);
 		voters.push_back (initial_rep_a);
+		timestamps.reserve (8);
+		timestamps.push_back (initial_timestamp_a);
 	}
 
 	std::chrono::steady_clock::time_point arrival;
 	nano::block_hash hash;
 	nano::inactive_cache_status status;
 	std::vector<nano::account> voters;
+	std::vector<uint64_t> timestamps;
 	bool needs_eval () const
 	{
 		return !status.bootstrap_started || !status.election_started || !status.confirmed;
@@ -227,7 +230,7 @@ public:
 	void add_recently_cemented (nano::election_status const &);
 	void add_recently_confirmed (nano::qualified_root const &, nano::block_hash const &);
 	void erase_recently_confirmed (nano::block_hash const &);
-	void add_inactive_votes_cache (nano::unique_lock<nano::mutex> &, nano::block_hash const &, nano::account const &);
+	void add_inactive_votes_cache (nano::unique_lock<nano::mutex> &, nano::block_hash const &, nano::account const &, uint64_t const);
 	// Inserts an election if conditions are met
 	void trigger_inactive_votes_cache_election (std::shared_ptr<nano::block> const &);
 	nano::inactive_cache_information find_inactive_votes_cache (nano::block_hash const &);
@@ -246,6 +249,7 @@ public:
 	void remove_election_winner_details (nano::block_hash const &);
 
 	nano::vote_generator generator;
+	nano::vote_generator final_generator;
 
 #ifdef MEMORY_POOL_DISABLED
 	using allocator = std::allocator<nano::inactive_cache_information>;
