@@ -1382,13 +1382,12 @@ void nano::active_transactions::add_inactive_votes_cache (nano::unique_lock<nano
 			{
 				auto is_new (false);
 				inactive_by_hash.modify (existing, [representative_a, timestamp_a, &is_new](nano::inactive_cache_information & info) {
-					auto it = std::find (info.voters.begin (), info.voters.end (), representative_a);
+					auto it = std::find_if (info.voters.begin (), info.voters.end (), [&representative_a](auto const & item_a) { return item_a.first == representative_a; });
 					is_new = (it == info.voters.end ());
 					if (is_new)
 					{
 						info.arrival = std::chrono::steady_clock::now ();
-						info.voters.push_back (representative_a);
-						info.timestamps.push_back (timestamp_a);
+						info.voters.emplace_back (representative_a, timestamp_a);
 					}
 				});
 
@@ -1477,7 +1476,7 @@ nano::inactive_cache_status nano::active_transactions::inactive_votes_bootstrap_
 	return inactive_votes_bootstrap_check_impl (lock_a, node.ledger.weight (voter_a), 1, hash_a, previously_a);
 }
 
-nano::inactive_cache_status nano::active_transactions::inactive_votes_bootstrap_check (nano::unique_lock<nano::mutex> & lock_a, std::vector<nano::account> const & voters_a, nano::block_hash const & hash_a, nano::inactive_cache_status const & previously_a)
+nano::inactive_cache_status nano::active_transactions::inactive_votes_bootstrap_check (nano::unique_lock<nano::mutex> & lock_a, std::vector<std::pair<nano::account, uint64_t>> const & voters_a, nano::block_hash const & hash_a, nano::inactive_cache_status const & previously_a)
 {
 	/** Perform checks on accumulated tally from inactive votes
 	 * These votes are generally either for unconfirmed blocks or old confirmed blocks
@@ -1487,7 +1486,7 @@ nano::inactive_cache_status nano::active_transactions::inactive_votes_bootstrap_
 	lock_a.unlock ();
 
 	nano::uint128_t tally;
-	for (auto const & voter : voters_a)
+	for (auto const & [voter, timestamp] : voters_a)
 	{
 		tally += node.ledger.weight (voter);
 	}

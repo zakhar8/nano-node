@@ -73,16 +73,13 @@ public:
 	status (status)
 	{
 		voters.reserve (8);
-		voters.push_back (initial_rep_a);
-		timestamps.reserve (8);
-		timestamps.push_back (initial_timestamp_a);
+		voters.emplace_back (initial_rep_a, initial_timestamp_a);
 	}
 
 	std::chrono::steady_clock::time_point arrival;
 	nano::block_hash hash;
 	nano::inactive_cache_status status;
-	std::vector<nano::account> voters;
-	std::vector<uint64_t> timestamps;
+	std::vector<std::pair<nano::account, uint64_t>> voters;
 	bool needs_eval () const
 	{
 		return !status.bootstrap_started || !status.election_started || !status.confirmed;
@@ -355,7 +352,7 @@ private:
 	static size_t constexpr confirmed_frontiers_max_pending_size{ 10000 };
 	static std::chrono::minutes constexpr expired_optimistic_election_info_cutoff{ 30 };
 	ordered_cache inactive_votes_cache;
-	nano::inactive_cache_status inactive_votes_bootstrap_check (nano::unique_lock<nano::mutex> &, std::vector<nano::account> const &, nano::block_hash const &, nano::inactive_cache_status const &);
+	nano::inactive_cache_status inactive_votes_bootstrap_check (nano::unique_lock<nano::mutex> &, std::vector<std::pair<nano::account, uint64_t>> const &, nano::block_hash const &, nano::inactive_cache_status const &);
 	nano::inactive_cache_status inactive_votes_bootstrap_check (nano::unique_lock<nano::mutex> &, nano::account const &, nano::block_hash const &, nano::inactive_cache_status const &);
 	nano::inactive_cache_status inactive_votes_bootstrap_check_impl (nano::unique_lock<nano::mutex> &, nano::uint128_t const &, size_t, nano::block_hash const &, nano::inactive_cache_status const &);
 	nano::inactive_cache_information find_inactive_votes_cache_impl (nano::block_hash const &);

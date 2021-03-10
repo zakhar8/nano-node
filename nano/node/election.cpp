@@ -470,9 +470,9 @@ nano::election_cleanup_info nano::election::cleanup_info_impl () const
 size_t nano::election::insert_inactive_votes_cache (nano::inactive_cache_information const & cache_a)
 {
 	nano::unique_lock<nano::mutex> lock (mutex);
-	for (size_t i (0), n (cache_a.voters.size ()); i < n; i++)
+	for (auto const & [rep, timestamp] : cache_a.voters)
 	{
-		auto inserted (last_votes.emplace (cache_a.voters[i], nano::vote_info{ std::chrono::steady_clock::time_point::min (), cache_a.timestamps[i], cache_a.hash }));
+		auto inserted (last_votes.emplace (rep, nano::vote_info{ std::chrono::steady_clock::time_point::min (), timestamp, cache_a.hash }));
 		if (inserted.second)
 		{
 			node.stats.inc (nano::stat::type::election, nano::stat::detail::vote_cached);
