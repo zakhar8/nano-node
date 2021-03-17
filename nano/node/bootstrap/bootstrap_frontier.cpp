@@ -321,7 +321,7 @@ void nano::frontier_req_server::next ()
 	if (accounts.empty ())
 	{
 		auto now (nano::seconds_since_epoch ());
-		bool skip_old (request->age != std::numeric_limits<decltype (request->age)>::max ());
+		bool disable_age_filter (request->age == std::numeric_limits<decltype (request->age)>::max ());
 		size_t max_size (128);
 		auto transaction (connection->node->store.tx_begin_read ());
 		if (!send_confirmed ())
@@ -329,7 +329,7 @@ void nano::frontier_req_server::next ()
 			for (auto i (connection->node->store.latest_begin (transaction, current.number () + 1)), n (connection->node->store.latest_end ()); i != n && accounts.size () != max_size; ++i)
 			{
 				nano::account_info const & info (i->second);
-				if (skip_old || (now - info.modified) <= request->age)
+				if (disable_age_filter || (now - info.modified) <= request->age)
 				{
 					nano::account const & account (i->first);
 					accounts.emplace_back (account, info.head);
