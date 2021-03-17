@@ -1057,6 +1057,15 @@ TEST (frontier_req, confirmed_frontier)
 
 	// Confirm account before genesis (confirmed only)
 	nano::blocks_confirm (*node1, { send1, receive1 });
+	{
+		auto election1 = node1->active.election (send1->qualified_root ());
+		ASSERT_NE (election1, nullptr);
+		auto election2 = node1->active.election (receive1->qualified_root ());
+		ASSERT_NE (election2, nullptr);
+		nano::lock_guard<std::mutex> guard (node1->active.mutex);
+		election2->confirm_once ();
+		election1->confirm_once ();
+	}
 	ASSERT_TIMELY (5s, node1->block_confirmed (send1->hash ()) && node1->block_confirmed (receive1->hash ()));
 	auto connection6 (std::make_shared<nano::bootstrap_server> (nullptr, node1));
 	auto req6 = std::make_unique<nano::frontier_req> ();
@@ -1073,6 +1082,15 @@ TEST (frontier_req, confirmed_frontier)
 
 	// Confirm account after genesis (confirmed only)
 	nano::blocks_confirm (*node1, { send2, receive2 });
+	{
+		auto election3 = node1->active.election (send2->qualified_root ());
+		ASSERT_NE (election3, nullptr);
+		auto election4 = node1->active.election (receive2->qualified_root ());
+		ASSERT_NE (election4, nullptr);
+		nano::lock_guard<std::mutex> guard (node1->active.mutex);
+		election3->confirm_once ();
+		election4->confirm_once ();
+	}
 	ASSERT_TIMELY (5s, node1->block_confirmed (send2->hash ()) && node1->block_confirmed (receive2->hash ()));
 	auto connection7 (std::make_shared<nano::bootstrap_server> (nullptr, node1));
 	auto req7 = std::make_unique<nano::frontier_req> ();
